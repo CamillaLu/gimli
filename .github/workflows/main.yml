@@ -60,25 +60,28 @@ jobs:
           working-directory: build
           run: xvfb-run make doc # xvfb is necessary for headless display of pyvista plots
   merging:
-    name: Merging dev into master
+    name: Automerging
     runs-on: self-hosted
     needs: docs
     if: github.ref == 'refs/heads/dev' # Only merge from dev
     steps:
-      - name: Merge into master
-        uses: devmasx/merge-branch@master
-        with:
-          type: now
-          target_branch: master
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge dev -> master (with rebase)
+        working-directory: source
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git remote set-url origin https://florian-wagner:${{ secrets.SECRET }}@github.com/gimli-org/gimli.git
+          git fetch
+          git rebase origin/master
+          git push origin HEAD:master --force-with-lease
   upload-html:
     name: Upload HTML to dev.pygimli.org
     runs-on: self-hosted
     needs: docs
     if: github.ref == 'refs/heads/dev' # Only merge from dev
     steps:
-      - name: Merge into master
+      - name: Uploading built html files
         working-directory: build
         run: rsync -avP --delete doc/html/ /var/www/html
-        
-  
+
+

@@ -58,14 +58,15 @@ def generateDataFromUniqueIndex(ind, data=None, nI=None):
     scheme.resize(0)  # make sure all data are deleted
     scheme.resize(len(ind))
     nmba = np.zeros([len(ind), 4], dtype=int)
+    ind1 = ind.copy()
     for i in range(4):
-        col = ind % nI
-        ind -= col
-        ind = ind // nI
+        col = ind1 % nI
+        ind1 -= col
+        ind1 = ind1 // nI
         nmba[:, i] = col
 
     for i, tok in enumerate("nmba"):
-        scheme[tok] = nmba[:, i] - 1
+        scheme[tok] = pg.IVector(nmba[:, i]) - 1
 
     scheme["valid"] = 1
     return scheme
@@ -284,6 +285,46 @@ def getReciprocals(data, change=False, remove=False):
         data.removeInvalid()
 
 
+def removeDuplicates(data, mode:str="average"):
+    """Remove duplicate rows from an ERT datacontainer.
+    
+    Parameters
+    ----------
+    data : ERTDataContainer
+        The data container from which duplicates should be removed.
+    mode : str, optional
+        The method to handle duplicates, choose between
+        - "average"
+        - "first"
+        - "last"
+        - "minerr"
+        - "weighted"
+    """
+    ind = uniqueERTIndex(data)
+    tokens = ["u", "i", "r", "rhoa", "err", "ip", "iperr"]
+    for i in np.unique(ind):
+        fi = np.nonzero(ind == i)[0]
+        if len(fi) > 1:
+            f0 = fi[0]
+            data["valid"][f0] = True
+            for ff in fi[1:]:
+                data["valid"][ff] = False
+
+            if mode == "average":
+                for tok in tokens:
+                    data[tok][f0] = np.mean(data[tok][fi])
+            else:
+                ff = f0
+                if mode == "last":
+                    ff = fi[-1]
+                elif mode == "minerr":
+                    ff = fi[np.argmin(data["err"][fi])]
+                for tok in tokens:
+                    data[tok][f0] = data[tok][ff]
+    
+    data.removeInvalid()  
+
+
 def extractReciprocals(fwd, bwd):
     """Extract reciprocal data from forward/backward DataContainers."""
     nMax = max(fwd.sensorCount(), bwd.sensorCount())
@@ -313,7 +354,29 @@ def extractReciprocals(fwd, bwd):
     return rec, both
 
 def combineMultipleData(DATA):
-    """Combine multiple data containers into data/err matrices."""
+    """Combine multiple data containers into data/err matrices.
+
+    Generates a unified data container and a data matrices
+    Non-existing data are filled with NaN values.
+    
+    Parameters
+    ----------
+    DATA : list of DataContainerERT
+        data contea
+
+    Returns
+    -------
+    data : pg.DataContainerERT
+        ERT data container with quadrupols from all input data
+    RHOA : np.array of size data.size() x len(DATA)
+        apparent resistivity data matrix
+    ERR : np.array (same size)
+        relative error matrix
+    IP : np.array(same size)
+        induced polarization data matrix
+    IPERR : np.array(same size)
+        induced polarization error matrix
+    """
     assert hasattr(DATA, '__iter__'), "DATA should be DataContainers or str!"
     if isinstance(DATA[0], str):  # read in if strings given
         DATA = [pg.DataContainerERT(data) for data in DATA]
@@ -325,7 +388,9 @@ def combineMultipleData(DATA):
     scheme = generateDataFromUniqueIndex(uI, DATA[0])
     uI = uniqueERTIndex(scheme)   #, unify=False)
     R = np.ones([scheme.size(), len(DATA)]) * np.nan
+    IP = R.copy()
     ERR = np.zeros_like(R)
+    IPERR = R.copy()
     if not scheme.haveData('k'):  # just do that only once
         scheme['k'] = createGeometricFactors(scheme)  # check numerical
 
@@ -339,6 +404,8 @@ def combineMultipleData(DATA):
 
         R[ii, i] = di['r']
         ERR[ii, i] = di['err']
+        IP[ii, i] = di['ip']
+        IPERR[ii, i] = di['iperr']
 
     RHOA = np.abs(np.reshape(scheme['k'], [-1, 1]) * R)
-    return scheme, RHOA, ERR
+    return scheme, RHOA, ERR, IP, IPERR
