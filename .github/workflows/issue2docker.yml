@@ -10,6 +10,7 @@ on:
 jobs:
   create_interactive_environment:
     runs-on: self-hosted
+    needs: reproduce_issue
     steps:
       - name: Run issue2docker
         run: |
