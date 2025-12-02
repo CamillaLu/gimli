@@ -18,7 +18,13 @@ jobs:
           fi
           sudo podman system prune -a -f
           sudo python3.9 /home/cluettgens/caesar/issue2docker-prototype/issue2docker.py --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
-          
+          sleep 5
+          sudo podman logs issue2docker
+          LOG_OUTPUT=$(sudo podman logs issue2docker)
+          echo $LOG_OUTPUT
+          EXTRACTED_URL=$(echo "$LOG_OUTPUT" | tail -n 1 | grep -oP '(http://[^\s]+|https://[^\s]+)')
+          echo $EXTRACTED_URL
+          echo "{\"url\": \"$EXTRACTED_URL\", \"issue_number\": \"${{ github.event.inputs.issue_number }}\"}" > results.json
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
