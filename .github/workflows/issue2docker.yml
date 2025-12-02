@@ -17,9 +17,8 @@ jobs:
             sudo podman stop $(sudo podman ps -aq);
           fi
           sudo podman system prune -a -f
-          sudo python3.9 /home/cluettgens/caesar/issue2docker-prototype/issue2docker.py --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
+          sudo python3.9 /home/cluettgens/caesar/issue2docker-prototype/issue2docker.py --interactive --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
           sleep 5
-          LOG_OUTPUT=$(sudo podman logs issue2docker)
           LOG_OUTPUT=$(sudo podman logs issue2docker)
           EXTRACTED_URL=$(echo "$LOG_OUTPUT" | grep -oP '(http://127.0.0.1[^\s]+|https://[^\s]+)' | head -n 1)
           echo "{\"url\": \"$EXTRACTED_URL\", \"issue_number\": \"${{ github.event.inputs.issue_number }}\"}" > results.json
@@ -29,3 +28,31 @@ jobs:
           name: interactive-issue-results
           path: |
             results.json
+
+  reproduce_issue:
+      runs-on: self-hosted
+      steps:
+        - name: Run issue2docker
+          run: |
+            sudo python3.9 /home/cluettgens/caesar/issue2docker-prototype/issue2docker.py --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
+            sleep 5
+            EXPECTED_RESULT=$(echo /home/cluettgens/caesar/issue2docker-prototype/result-{{ github.event.inputs.issue_number }}.txt)
+            ACTUAL_RESULT=$(sudo podman logs issue2docker)
+            if [ "$EXPECTED_RESULT" = "$ACTUAL_RESULT" ]; then
+              echo "Issue reproduced successfully."
+              echo "reproduce_result=1" >> $GITHUB_OUTPUT
+            else
+              echo "Issue could not be reproduced automatically."
+               echo "reproduce_result=0" >> $GITHUB_OUTPUT
+            fi
+        - name: Write artifact
+          run: |
+            echo "{\"issue_number\": \"${{ github.event.issue.number }}\", \"reproduce_result\": \"${{ steps.reproduce.outputs.reproduce_result }}\"}" > results.json
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: reproduce-issue-results
+            path: |
+              results.json
+            
+  
