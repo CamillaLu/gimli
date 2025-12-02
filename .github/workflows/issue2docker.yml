@@ -34,6 +34,7 @@ jobs:
       runs-on: self-hosted
       steps:
         - name: Run issue2docker
+          id: reproduce
           run: |
             if [ "$(sudo podman ps -aq)" ]; then
               sudo podman stop $(sudo podman ps -aq);
@@ -52,7 +53,7 @@ jobs:
             fi
         - name: Write artifact
           run: |
-            echo "{\"issue_number\": \"${{ github.event.issue.number }}\", \"reproduce_result\": \"${{ steps.reproduce.outputs.reproduce_result }}\"}" > results.json
+            echo "{\"issue_number\": \"${{ github.event.inputs.issue_number }}\", \"reproduce_result\": \"${{ steps.reproduce.outputs.reproduce_result }}\"}" > results.json
         - name: Upload artifact
           uses: actions/upload-artifact@v4
           with:
