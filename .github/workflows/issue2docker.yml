@@ -1,0 +1,27 @@
+name: issue2docker
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  create_interactive_environment:
+    runs-on: self-hosted
+    steps:
+      - name: Run issue2docker
+        run: |
+          sudo podman stop $(sudo podman ps -aq)
+          sudo podman system prune -a -f
+          sudo python3.9 issue2docker.py --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
+          sleep 5
+          LOG_OUTPUT=$(sudo podman logs issue2docker)
+          echo $LOG_OUTPUT
+          EXTRACTED_URL=$(echo "$LOG_OUTPUT" | tail -n 1 | grep -oP '(http://[^\s]+|https://[^\s]+)')
+          echo $EXTRACTED_URL
+          echo "{\"url\": \"$EXTRACTED_URL\", \"issue_number\": \"${{ github.event.inputs.issue_number }}\"}" > results.json
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: interactive-issue-results
+          path: |
+            results.json
