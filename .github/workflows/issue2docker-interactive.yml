@@ -1,4 +1,4 @@
-name: issue2docker
+name: issue2docker-interactive
 
 on:
   workflow_dispatch:
