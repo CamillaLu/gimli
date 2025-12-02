@@ -23,16 +23,16 @@ jobs:
             EXPECTED_RESULT=$(echo /home/cluettgens/caesar/issue2docker-prototype/result-{{ github.event.inputs.issue_number }}.txt)
             if sudo podman ps -a --format '{{.Names}}' | grep -q "^issue2docker$"; then
               ACTUAL_RESULT=$(sudo podman logs issue2docker)
+              if [ "$EXPECTED_RESULT" = "$ACTUAL_RESULT" ]; then
+                echo "Issue reproduced successfully."
+                echo "reproduce_result=1" >> $GITHUB_OUTPUT
+              else
+                echo "Issue could not be reproduced automatically."
+                 echo "reproduce_result=0" >> $GITHUB_OUTPUT
+              fi
             else
               echo "No code and/or expected result to reproduce."
-              echo "reproduce_result="2" >> $GITHUB_OUTPUT
-            fi
-            if [ "$EXPECTED_RESULT" = "$ACTUAL_RESULT" ]; then
-              echo "Issue reproduced successfully."
-              echo "reproduce_result=1" >> $GITHUB_OUTPUT
-            else
-              echo "Issue could not be reproduced automatically."
-               echo "reproduce_result=0" >> $GITHUB_OUTPUT
+              echo "reproduce_result=2" >> $GITHUB_OUTPUT
             fi
         - name: Write artifact
           run: |
