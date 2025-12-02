@@ -1,8 +1,11 @@
 name: issue2docker
 
 on:
-  issues:
-    types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Number of the issue'
+        required: true
 
 jobs:
   create_interactive_environment:
