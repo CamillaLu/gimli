@@ -1,4 +1,4 @@
-name: issue2docker
+name: issue2docker-reproduce
 
 on:
   workflow_dispatch:
