@@ -1,7 +1,6 @@
 name: pgdev
 channels:
   - conda-forge
-  - defaults
   - gimli
 dependencies:
   - pgcore >= 1.5.0
@@ -20,7 +19,9 @@ dependencies:
   - sphinxcontrib-doxylink
   - sphinx-autobuild
   - bibtexparser
-  - pyvista[all,trame]>=0.46
+  - pyvista >=0.46
+  - trame
+  - trame-vtk
   - meshio
   - scooby
   - tqdm
@@ -31,3 +32,4 @@ dependencies:
   - trame-vtk
   - conda-build
   - linkify-it-py
+  - suitesparse==5.*
