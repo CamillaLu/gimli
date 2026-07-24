@@ -14,7 +14,10 @@ jobs:
         - name: Install repo2docker
           run: pip install jupyter-repo2docker
         - name: Install issue2docker
-          run: git clone -b prototype-demo https://gitlab.git.nrw/rpdm/projects-and-services/caesar/issue2docker.git
+          run: |
+            git clone -b prototype-demo https://gitlab.git.nrw/rpdm/projects-and-services/caesar/issue2docker.git
+            apt install pandoc
+            cd issue2docker && pip install -r requirements.txt
         - name: Run issue2docker
           id: reproduce
           run: |
