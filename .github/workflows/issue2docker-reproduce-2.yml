@@ -22,7 +22,7 @@ jobs:
           id: reproduce
           run: |
             # run issue2docker
-            python ./issue2docker/issue2docker.py ${{ github.event.inputs.issue_url }}
+            python ./issue2docker/issue2docker.py --repo2docker_path repo2docker --container_tool docker ${{ github.event.inputs.issue_url }}
             # wait for run to finish
             sleep 5
             # compare expected and actual result and write to results artifact
