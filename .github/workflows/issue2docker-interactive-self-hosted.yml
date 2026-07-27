@@ -1,4 +1,4 @@
-name: issue2docker-interactive
+name: issue2docker-interactive-self-hosted
 
 on:
   workflow_dispatch:
