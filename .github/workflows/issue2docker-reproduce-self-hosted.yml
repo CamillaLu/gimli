@@ -1,4 +1,4 @@
-name: issue2docker-reproduce
+name: issue2docker-reproduce-self-hosted
 
 on:
   workflow_dispatch:
