@@ -3,8 +3,8 @@ name: issue2docker-interactive-self-hosted
 on:
   workflow_dispatch:
     inputs:
-      issue_number:
-        description: 'Number of the issue'
+      issue_url:
+        description: 'URL of the issue'
         required: true
 
 jobs:
@@ -14,19 +14,19 @@ jobs:
       - name: Run issue2docker
         run: |
           # stop old container
-          if [ "$(sudo podman ps -aq)" ]; then
-            sudo podman stop $(sudo podman ps -aq);
+          if [ "$(${{ vars.DOCKER_COMMAND }} ps -aq)" ]; then
+            ${{ vars.DOCKER_COMMAND }} stop $(${{ vars.DOCKER_COMMAND }} ps -aq);
           fi
           # remove old contents to make sure a new image is built
-          sudo podman system prune -a -f
+          ${{ vars.DOCKER_COMMAND }} system prune -a -f
           # run issue2docker
-          sudo python3.9 /home/cluettgens/caesar/issue2docker-prototype/issue2docker.py --interactive --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
+          ${{ vars.PYTHON_COMMAND }} ./issue2docker/issue2docker.py --interactive --container_tool ${{ vars.CONTAINER_TOOL }} --repo2docker_args "${{ vars.REPO2DOCKER_ARGS }}" ${{ github.event.inputs.issue_url }}
           # wait for environment to be created
           sleep 5
           # extract URL to JupyterHub and write to results artifact
-          LOG_OUTPUT=$(sudo podman logs issue2docker)
+          LOG_OUTPUT=$(${{ vars.DOCKER_COMMAND }} logs issue2docker)
           EXTRACTED_URL=$(echo "$LOG_OUTPUT" | grep -oP '(http://127.0.0.1[^\s]+|https://[^\s]+)' | head -n 1)
-          echo "{\"url\": \"$EXTRACTED_URL\", \"issue_number\": \"${{ github.event.inputs.issue_number }}\"}" > results.json
+          echo "{\"url\": \"$EXTRACTED_URL\", \"issue_url\": \"${{ github.event.inputs.issue_url }}\"}" > results.json
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
