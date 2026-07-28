@@ -20,7 +20,7 @@ jobs:
           # remove old contents to make sure a new image is built
           ${{ vars.DOCKER_COMMAND }} system prune -a -f
           # run issue2docker
-          ${{ vars.PYTHON_COMMAND }} ./issue2docker/issue2docker.py --interactive --repo2docker_path repo2docker --container_tool ${{ vars.CONTAINER_TOOL }} --repo2docker_args "${{ vars.REPO2DOCKER_ARGS }}" ${{ github.event.inputs.issue_url }}
+          ${{ vars.PYTHON_COMMAND }} ./issue2docker/issue2docker.py --interactive --container_tool ${{ vars.CONTAINER_TOOL }} --repo2docker_args "${{ vars.REPO2DOCKER_ARGS }}" ${{ github.event.inputs.issue_url }}
           # wait for environment to be created
           sleep 5
           # extract URL to JupyterHub and write to results artifact
