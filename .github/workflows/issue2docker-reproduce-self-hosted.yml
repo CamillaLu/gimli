@@ -3,8 +3,8 @@ name: issue2docker-reproduce-self-hosted
 on:
   workflow_dispatch:
     inputs:
-      issue_number:
-        description: 'Number of the issue'
+      issue_url:
+        description: 'URL of the issue'
         required: true
 
 jobs:
@@ -15,19 +15,19 @@ jobs:
           id: reproduce
           run: |
             # stop old container
-            if [ "$(sudo podman ps -aq)" ]; then
-              sudo podman stop $(sudo podman ps -aq);
+            if [ "$(${{ vars.DOCKER_COMMAND }} ps -aq)" ]; then
+              ${{ vars.DOCKER_COMMAND }} stop $(${{ vars.DOCKER_COMMAND }} ps -aq);
             fi
             # remove old contents to make sure a new image is built
-            sudo podman system prune -a -f
+            ${{ vars.DOCKER_COMMAND }} system prune -a -f
             # run issue2docker
-            sudo python3.9 /home/cluettgens/caesar/issue2docker-prototype/issue2docker.py --repo2docker_args "--engine=podman --user-id=87200024 --user-name=cluettgens" https://github.com/CamillaLu/gimli/issues/${{ github.event.inputs.issue_number }}
+            ${{ vars.PYTHON_COMMAND }} ./issue2docker/issue2docker.py --container_tool ${{ vars.CONTAINER_TOOL }} --repo2docker_args "${{ vars.REPO2DOCKER_ARGS }}" ${{ github.event.inputs.issue_url }}
             # wait for run to finish
             sleep 5
             # compare expected and actual result and write to results artifact
-            EXPECTED_RESULT=$(echo /home/cluettgens/caesar/issue2docker-prototype/result-{{ github.event.inputs.issue_number }}.txt)
-            if sudo podman ps -a --format '{{.Names}}' | grep -q "^issue2docker$"; then
-              ACTUAL_RESULT=$(sudo podman logs issue2docker)
+            EXPECTED_RESULT=$(echo ./issue2docker/result.txt)
+            if ${{ vars.DOCKER_COMMAND }} ps -a --format '{{.Names}}' | grep -q "^issue2docker$"; then
+              ACTUAL_RESULT=$(${{ vars.DOCKER_COMMAND }} logs issue2docker)
               if [ "$EXPECTED_RESULT" = "$ACTUAL_RESULT" ]; then
                 echo "Issue reproduced successfully."
                 echo "reproduce_result=1" >> $GITHUB_OUTPUT
@@ -41,7 +41,7 @@ jobs:
             fi
         - name: Write artifact
           run: |
-            echo "{\"issue_number\": \"${{ github.event.inputs.issue_number }}\", \"reproduce_result\": \"${{ steps.reproduce.outputs.reproduce_result }}\"}" > results.json
+            echo "{\"issue_url\": \"${{ github.event.inputs.issue_url }}\", \"reproduce_result\": \"${{ steps.reproduce.outputs.reproduce_result }}\"}" > results.json
         - name: Upload artifact
           uses: actions/upload-artifact@v4
           with:
